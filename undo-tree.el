@@ -3086,42 +3086,43 @@ without asking for confirmation."
   (undo-list-transfer-to-tree)
   (when (and buffer-undo-tree (not (eq buffer-undo-tree t)))
     (condition-case nil
-	(undo-tree-kill-visualizer)
+        (undo-tree-kill-visualizer)
       (error (undo-tree-clear-visualizer-data buffer-undo-tree)))
     (let ((buff (current-buffer))
-	  tree)
+          tree)
       ;; get filename
       (unless filename
-	(setq filename
-	      (if buffer-file-name
-		  (undo-tree-make-history-save-file-name buffer-file-name)
-		(expand-file-name (read-file-name "File to save in: ") nil))))
+        (setq filename
+              (if buffer-file-name
+                  (undo-tree-make-history-save-file-name buffer-file-name)
+                (expand-file-name (read-file-name "File to save in: ") nil))))
       (when (or (not (file-exists-p filename))
-		overwrite
-		(yes-or-no-p (format "Overwrite \"%s\"? " filename)))
-	(unwind-protect
-	    (progn
-	      ;; transform undo-tree into non-circular structure, and make
-	      ;; temporary copy
-	      (undo-tree-decircle buffer-undo-tree)
-	      (setq tree (copy-undo-tree buffer-undo-tree))
-	      ;; discard undo-tree object pool before saving
-	      (setf (undo-tree-object-pool tree) nil)
-	      ;; print undo-tree to file
-	      ;; NOTE: We use `with-temp-buffer' instead of `with-temp-file'
-	      ;;       to allow `auto-compression-mode' to take effect, in
-	      ;;       case user has overridden or advised the default
-	      ;;       `undo-tree-make-history-save-file-name' to add a
-	      ;;       compressed file extension.
-	      (with-auto-compression-mode
-		(with-temp-buffer
-		  (prin1 (sha1 buff) (current-buffer))
-		  (terpri (current-buffer))
-		  (let ((print-circle t)) (prin1 tree (current-buffer)))
-		  (write-region nil nil filename))))
-	  ;; restore circular undo-tree data structure
-	  (undo-tree-recircle buffer-undo-tree))
-	))))
+                overwrite
+                (yes-or-no-p (format "Overwrite \"%s\"? " filename)))
+        (unwind-protect
+            (progn
+              ;; transform undo-tree into non-circular structure, and make
+              ;; temporary copy
+              (undo-tree-decircle buffer-undo-tree)
+              (setq tree (copy-undo-tree buffer-undo-tree))
+              ;; discard undo-tree object pool before saving
+              (setf (undo-tree-object-pool tree) nil)
+              ;; print undo-tree to file
+              ;; NOTE: We use `with-temp-buffer' instead of `with-temp-file'
+              ;;       to allow `auto-compression-mode' to take effect, in
+              ;;       case user has overridden or advised the default
+              ;;       `undo-tree-make-history-save-file-name' to add a
+              ;;       compressed file extension.
+              (with-auto-compression-mode
+                (with-temp-buffer
+                  (let ((print-length nil)
+                        (print-level nil))
+                    (prin1 (sha1 buff) (current-buffer))
+                    (terpri (current-buffer))
+                    (let ((print-circle t)) (prin1 tree (current-buffer)))
+                    (write-region nil nil filename)))))
+          ;; restore circular undo-tree data structure
+          (undo-tree-recircle buffer-undo-tree))))))
 
 
 
